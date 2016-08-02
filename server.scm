@@ -7,8 +7,23 @@
 				((= n i) p)
 				((> n 0) (pow_i (+ i 1) (* p x)))
 				(else (pow_i (- i 1) (/ p x)))))))
-             
 
+
+(define area_quadrado
+  (lambda (a b)
+    (* a b)))
+
+(define area_triangulo
+  (lambda (a b)
+    (* a (/ 2 b))))
+
+(define area_circulo
+  (lambda (r)
+    (* r (* 3.14 3.14))))
+
+(define volume_cubo
+  (lambda (a b c)
+    (* a (* b c))))
 ;TCP test server;
 (require racket/tcp)
 (define l (tcp-listen 5400))
