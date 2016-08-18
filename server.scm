@@ -8,7 +8,6 @@
 				((> n 0) (pow_i (+ i 1) (* p x)))
 				(else (pow_i (- i 1) (/ p x)))))))
 
-
 (define area_quadrado
   (lambda (a b)
     (* a b)))
@@ -24,6 +23,28 @@
 (define volume_cubo
   (lambda (a b c)
     (* a (* b c))))
+
+(define volume_cilindro
+  (lambda (r h)
+    (* 3.14 (* h (* r r)))))
+
+(define fatorial
+  (lambda (n)
+    (if (= n 0) 1
+        (* n (fatorial (- n 1)))))
+
+(define seno
+    (lambda (x)
+      (sin x)))
+  
+(define cosseno
+  (lambda (x)
+    (cos x)))
+  
+(define tangente
+  (lambda (x)
+    (tan x)))
+
 ;TCP test server;
 (require racket/tcp)
 (define l (tcp-listen 5400))
