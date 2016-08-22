@@ -1,4 +1,25 @@
-#lang racket
+;import utilities
+(use srfi-18)
+
+(load "channel.scm")
+
+(import channel)
+
+;define utilities
+
+(define (whoami)
+  (thread-name (current-thread)))
+
+(define (random-sleep)
+  (thread-sleep! (* (random 100) 0.01)))
+
+(define (make-request op arg1 arg2 resp)
+  (lambda (m)
+    (cond ((eq? m 'get-op) (lambda () op))
+          ((eq? m 'get-arg1) (lambda () arg1))
+          ((eq? m 'get-arg2) (lambda () arg2))
+          ((eq? m 'get-resp) (lambda () resp))
+          (else (error "Unknown method")))))
 
 ;Define functions
 
@@ -35,8 +56,8 @@
     (* r (* 3.14 3.14))))
 
 (define volume_cubo
-  (lambda (a b c)
-    (* a (* b c))))
+  (lambda (a)
+    (* a (* a a))))
 
 (define volume_cilindro
   (lambda (r h)
@@ -131,29 +152,219 @@
 (define (multiplicando a) 
 (caddr a))
 
-;TCP test server;
-(require racket/tcp)
-(define l (tcp-listen 5400))
+;Server;
 
-(define-values (i o) (tcp-accept l))
-
-(file-stream-buffer-mode i 'none)
-(file-stream-buffer-mode o 'none)
-(read i)
-(write  "Bem-vindo ao UFAlphaBC. Entre com a operacao solicitada:"  o)   
-(close-input-port i)
-(close-output-port o)
+(define (make-server)
+  (define request (make-channel))
+  (define (serve)
+    (let loop ((req ((request 'receive))))
+      (define response ((req 'get-resp)))
+      (define op ((req 'get-op)))
+      (define arg1 ((req 'get-arg1)))
+      (define arg2 ((req 'get-arg2)))
+      ;dispatcher
+      (thread-start!
+        (make-thread
+          (cond ((eq? op 'pow)
+            (lambda ()
+              (pow_server response arg1 arg2)))
+            ((eq? op 'area_quadrado)
+              (lambda ()
+                (area_quadrado_server response arg1 arg2)))
+            ((eq? op 'area_retangulo)
+              (lambda ()
+                (area_retangulo_server response arg1 arg2)))
+            ((eq? op 'area_circulo)
+              (lambda ()
+                (area_circulo_server response arg1)))
+            ((eq? op 'area_trapezio)
+              (lambda ()
+                (area_trapezio_server response arg1 arg2)))
+            ((eq? op 'area_triangulo)
+              (lambda () 
+                (area_triangulo_server response arg1 arg2)))
+            ((eq? op 'area_paralelograma)
+              (lambda ()
+                (area_paralelograma_server response arg1 arg2)))
+            ((eq? op 'volume_cubo)
+              (lambda ()
+                (volume_cubo_server response arg1)))
+            ((eq? op 'volume_cilindro)
+              (lambda ()
+                (volume_cilindro_server response arg1 arg2)))
+            ((eq? op 'volume_esfera)
+              (lambda ()
+                (volume_esfera_serve response arg1)))
+            ((eq? op 'volume_cone)
+              (lambda ()
+                (volume_cone_server response arg1 arg2)))
+            ((eq? op 'fatorial)
+              (lambda ()
+                (fatorial_server response arg1)))
+            ((eq? op 'seno)
+              (lambda ()
+                (seno_server response arg1)))
+            ((eq? op 'cosseno)
+              (lambda ()
+                (cosseno_server response arg1)))
+            ((eq? op 'tangente)
+              (lambda ()
+                (tangente_server response arg1)))
+            ((eq? op 'arco_seno)
+              (lambda ()
+                (arco_seno_server response arg1)))
+            ((eq? op 'arco_cosseno)
+              (lambda ()
+                (arco_cosseno_server response arg1)))
+            ((eq? op 'arco_tangente)
+              (lambda ()
+                (arco_tangente_server response arg1)))
+            ((eq? op 'derivada)
+              (lambda ()
+                (derivada_server response arg1 arg2)))
+            ((eq? op '+)
+              (lambda ()
+                (plus response arg1 arg2)))
+            ((eq? op '-)
+              (lambda ()
+                (minus response arg1 arg2)))
+            ((eq? op '/)
+              (lambda ()
+                (divide response arg1 arg2)))
+            ((eq? op '*)
+              (lambda ()
+                (multiply response arg1 arg2)))
+            (else (lambda () (error response))))))
+      (loop ((request 'receive)))))
   
+  (define (get-request)
+    request)
+
+  (define (pow_server response arg1 arg2)
+    ((response 'send) (pow arg1 arg2)))  
+
+  (define (area_quadrado_server response arg1 arg2)
+    ((response 'send) (area_quadrado arg1 arg2)))
+
+  (define (area_paralelograma_server response arg1 arg2)
+    ((response 'send) (area_paralelograma arg1 arg2)))
+
+  (define (area_retangulo_server response arg1 arg2)
+    ((response 'send) (area_retangulo arg1 arg2)))
+
+  (define (area_trapezio_server response arg1 arg2)
+    ((response 'send) (area_trapezio arg1 arg2)))
+
+  (define (area_triangulo_server response arg1 arg2)
+    ((response 'send) (area_triangulo arg1 arg2)))
+
+  (define (area_circulo_server response arg1)
+    ((response 'send) (area_circulo arg1)))
+
+  (define (volume_cubo_server response arg1)
+    ((response 'send) (volume_cubo arg1))) 
+
+  (define (volume_cilindro_server response arg1 arg2)
+    ((response 'send) (volume_cilindro arg1 arg2)))
+
+  (define (volume_esfera_serve response arg1)
+    ((response 'send) (volume_esfera arg1)))
+
+  (define (volume_cone_server response arg1 arg2)
+    ((response 'send) (volume_cone arg1 arg2)))
+
+  (define (fatorial_server response arg1)
+    ((response 'send) (fatorial arg1)))
+
+  (define (seno_server response arg1)
+    ((response 'send) (seno arg1)))
+
+  (define (cosseno_server response arg1)
+    ((response 'send) (cosseno arg1)))
+
+  (define (tangente_server response arg1)
+    ((response 'send) (tangente arg1)))
+
+  (define (arco_seno_server response arg1)
+    ((response 'send) (arco_seno arg1)))
+
+  (define (arco_cosseno_server response arg1)
+    ((response 'send) (arco_cosseno arg1)))
+
+  (define (arco_tangente_server response arg1)
+    ((response 'send) (arco_tangente arg1)))
+
+  (define (derivada_server response arg1 arg2)
+    ((response 'send) (derivada arg1 arg2)))
+
+  (define (plus response arg1 arg2)
+    ((response 'send) (+ arg1 arg2)))
+  
+  (define (minus response arg1 arg2)
+    ((response 'send) (- arg1 arg2)))
+  
+  (define (divide response arg1 arg2)
+    ((response 'send) (/ arg1 arg2)))
+  
+  (define (multiply response arg1 arg2)
+    ((response 'send) (* arg1 arg2)))  
+
+  (define (error response)
+    ((response 'send) "Unknown operation"))
+
+  (lambda (m)
+    (cond ((eq? m 'serve) serve)
+          ((eq? m 'get-request) get-request)
+          (else error "Unknown method"))))
+
+;Client
+(define (make-client request op)
+  (define response (make-channel))
+  (define (send-sequence start end)
+    (let loop ((i start))
+      (if (< i end)
+        (begin
+          ((request 'send) (make-request op i (+ i 1) response))
+          (print (whoami) '_ i op (+ i 1) '= ((response 'receive)))
+          (loop (+ i 1))))))
+  (lambda (m)
+    (cond ((eq? m 'send-sequence) send-sequence)
+          (else (error "Unknown method")))))
+
+(define server (make-server))
+(define request ((server 'get-request)))
+
+(define t-s (make-thread (lambda () ((server 'serve))) 's))
+(define t-c1 (make-thread 
+               (lambda () 
+                 (define client (make-client request 'pow))
+                 ((client 'send-sequence) 0 10)) 'c-1))
+(define t-c2 (make-thread 
+               (lambda () 
+                 (define client (make-client request 'area_circulo))
+                 ((client 'send-sequence) 10 20)) 'c-2))
+(define t-c3 (make-thread 
+               (lambda () 
+                 (define client (make-client request '/))
+                 ((client 'send-sequence) 20 30)) 'c-3))
+(define t-c4 (make-thread 
+               (lambda () 
+                 (define client (make-client request '*))
+                 ((client 'send-sequence) 30 40)) 'c-4))
+
+(map thread-start! (list t-s t-c1 t-c2 t-c3 t-c4))
+;(thread-sleep! 120)                                            
+
 ;Textos;
 
 (define ajuda(string-append 
- "Potência: (pow x n) sendo x a base e o n o expoente.  "
+ "Potência: (pow x n) sendo x a base e o n o expoente.  \n"
  "Área Quadrado: (area_quadrado b h) sendo b a base e h a altura.  " 
  "Área Paralelograma: (area_paralelograma b h) sendo b a base e h a altura. "
  "Área Retângulo: (area_retangulo b h) sendo b a base  e h a altura. "
  "Área Trapézio: (area_trapezio h b1 b2) sendo b2 a base menor, b2 a base maior e h a altura. "
  "Área Triângulo: (area_triangulo h b1 b2) sendo b a base  e h a altura. "
- "Volume Cubo: (volume_cubo a1 a2 a3) sendo  a o valor de cada aresta. "
+ "Volume Cubo: (volume_cubo a) sendo  a o valor de cada aresta. "
  "Volume Cilindro: (volume_cilindro r h) sendo r o raio e h a altura. "
  "Volume Esfera: (volume_esfera r ) sendo r o raio. "
  "Fatorial: (fatorial n) "
@@ -163,5 +374,5 @@
  "Arco Seno: (arco_seno n) "
  "Arco Cosseno: (arco_cosseno n) "
  "Arco Tangente: (arco_tangente n) "
- "Derivada: (derivada e v) sendo e a expressão e v o valor. "
+ "Derivada: (derivada e v) sendo e a expressão e v a variavel. "
  ))
