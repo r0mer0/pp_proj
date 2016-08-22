@@ -167,7 +167,9 @@
         (make-thread
           (cond ((eq? op 'pow)
             (lambda ()
-              (pow_server response arg1 arg2)))
+              (print "Processamento lento...")
+              (pow_server response arg1 arg2)
+              (random-sleep)))              
             ((eq? op 'area_quadrado)
               (lambda ()
                 (area_quadrado_server response arg1 arg2)))
@@ -325,7 +327,7 @@
       (if (< i end)
         (begin
           ((request 'send) (make-request op i (+ i 1) response))
-          (print (whoami) '_ i op (+ i 1) '= ((response 'receive)))
+          (print (whoami) '__ i op (+ i 1) '= ((response 'receive)))
           (loop (+ i 1))))))
   (lambda (m)
     (cond ((eq? m 'send-sequence) send-sequence)
@@ -341,11 +343,11 @@
                  ((client 'send-sequence) 0 10)) 'c-1))
 (define t-c2 (make-thread 
                (lambda () 
-                 (define client (make-client request 'area_circulo))
+                 (define client (make-client request 'area_quadrado))
                  ((client 'send-sequence) 10 20)) 'c-2))
 (define t-c3 (make-thread 
                (lambda () 
-                 (define client (make-client request '/))
+                 (define client (make-client request 'volume_cone))
                  ((client 'send-sequence) 20 30)) 'c-3))
 (define t-c4 (make-thread 
                (lambda () 
